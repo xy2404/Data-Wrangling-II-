@@ -1,0 +1,89 @@
+---
+title: "Reading data from the web"
+author: "Annie Yu"
+date: "10/11/2018"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+library(tidyverse)
+library(rvest)
+library(httr)
+
+```
+
+## Scrape the table, get the information from the website
+```{r}
+url= "http://samhda.s3-us-gov-west-1.amazonaws.com/s3fs-public/field-uploads/2k15StateFiles/NSDUHsaeShortTermCHG2015.htm"
+
+drug_use_xml =  read_html(url)
+```
+
+## getting the table from the html
+```{r}
+drug_use_xml %>% 
+  html_nodes(css = "table") %>% 
+  .[[1]] %>% #get the first table
+  html_table() %>% 
+  slice(-1) %>%  #remove the first row
+  as_tibble() #make the table
+```
+
+## Create a data frame that contains the cost of living table for New York from this page.
+```{r}
+url = "https://www.bestplaces.net/cost_of_living/city/new_york/new_york"
+newyork = read_html(url)
+newyork %>% 
+  html_nodes(css = "table") %>% 
+  .[[1]] %>% 
+  html_table(header = TRUE) %>% #the hearder= true in order to make the header not in the row1
+  
+```
+
+### harry potter
+
+let get some potter data
+```{r}
+hpsaga_html = read_html("https://www.imdb.com/list/ls000630791/") 
+
+title_vec <- hpsaga_html %>% 
+  html_nodes(css = ".lister-item-header a") %>%  #use the CSS selector to choose(example= choose name)
+  html_text() # show the selector information
+
+gross_rev_vec <- hpsaga_html %>% 
+  html_nodes(css = ".text-small:nth-child(7) span:nth-child(5)") %>%  #use the CSS selector to choose(example= money)
+  html_text() # show the selector information
+
+hpsaga_df =  tibble(
+  title = title_vec,
+  gross = gross_rev_vec) # make a table which information use the css selector to choose
+```
+
+## Using the API
+get the water data
+
+```{r}
+nyc_water = GET("https://data.cityofnewyork.us/resource/waf7-5gvc.csv") %>% # directly GET the information, copy the API link
+content("parsed")
+```
+
+As JAON file
+```{r}
+nyc_water = GET("https://data.cityofnewyork.us/resource/waf7-5gvc.json") %>% #.json
+  content("text") %>% 
+  jsonlite::fromJSON() %>%
+  as_tibble()
+```
+
+BRFSS
+```{r}
+brfss_smart2010=
+  GET("https://data.cdc.gov/api/views/acme-vg9e/rows.csv?accessType=DOWNLOAD") %>% 
+  content("parsed")
+```
+
+```{r}
+poke = GET("http://pokeapi.co/api/v2/pokemon/1") %>%
+  content()
+```
+
